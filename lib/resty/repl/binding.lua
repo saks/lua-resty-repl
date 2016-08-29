@@ -20,7 +20,7 @@ function InstanceMethods:local_var(name, ...)
   local func = self.info.func
   if 'function' ~= type(func) then return end
 
-  local index = get_function_index(func) - 1 -- FIXME: why "-1" ???
+  local index = get_function_index(func) - 1
   local i = 1
 
   local all_names = {}
@@ -82,7 +82,7 @@ function InstanceMethods:upvalue(name, ...)
   end
 end
 
-function InstanceMethods:get_fenv(last_return_value)
+function InstanceMethods:get_fenv()
   return setmetatable({}, {
     __index = function(_, key)
       return self:local_var(key) or self:upvalue(key) or self.env[key]
@@ -91,14 +91,16 @@ function InstanceMethods:get_fenv(last_return_value)
       local set_local = self:local_var(key, value)
       local set_upvalue
 
-      self.env._ = last_return_value
-
       if not set_local   then set_upvalue   = self:upvalue(key, value) end
       if not set_upvalue then self.env[key] = value                    end
 
       return value
     end
   })
+end
+
+function InstanceMethods:update_last_return_value(value)
+  self.env._ = value
 end
 
 function _M.new(caller_info)

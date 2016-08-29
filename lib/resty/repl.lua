@@ -18,11 +18,10 @@ local repl_binding = require 'resty.repl.binding'
 local readline = require 'resty.repl.readline'
 
 local _M = { _VERSION = '0.1' }
-_M.last_return_value = nil
 
 local context = function()
-  if ngx and ngx.get_phase then
-    return 'ngx(' .. ngx.get_phase() .. ')'
+  if _G.ngx and _G.ngx.get_phase then
+    return 'ngx(' .. _G.ngx.get_phase() .. ')'
   else
     return 'lua(main)'
   end
@@ -32,6 +31,16 @@ local prompt_line = function()
   local res = '[' .. _M.line_count .. '] ' .. context() .. '> '
   _M.line_count = _M.line_count + 1
   return res
+end
+
+_M.exit = function(exit_code)
+  os.exit(exit_code)
+end
+
+_M.chars_to_string = function(chars)
+  local result = ffi.string(chars)
+  ffi.C.free(chars)
+  return result
 end
 
 local function print_results(...)
@@ -63,7 +72,7 @@ local function print_results(...)
     return_value = nil
   end
 
-  _M.last_return_value = return_value
+  _M.binding:update_last_return_value(return_value)
 
   local out = {}
 
@@ -72,7 +81,7 @@ local function print_results(...)
   if 'string' == type(return_value) then
     table.insert(out, '=> ')
     table.insert(out, return_value)
-  elseif ngx and (ngx.null == return_value) then
+  elseif _G.ngx and (_G.ngx.null == return_value) then
     table.insert(out, '=> ')
     table.insert(out, '<ngx.null>')
   else
@@ -83,12 +92,11 @@ local function print_results(...)
   readline.puts(table.concat(out))
 end
 
-local callback_line_handler = function(chars)
+_M.callback_line_handler = function(chars)
   local code
 
   if chars ~= nil then
-    code = ffi.string(chars)
-    ffi.C.free(chars)
+    code = _M.chars_to_string(chars)
     readline.add_to_history(code)
   end
 
@@ -102,7 +110,7 @@ local callback_line_handler = function(chars)
   if 'exit!' == code then
     _M.running = false
     readline.teardown()
-    os.exit(0)
+    _M.exit(0)
   end
 
   if '' == code then return end
@@ -121,7 +129,7 @@ local callback_line_handler = function(chars)
   end
 
   if code_function then
-    setfenv(code_function, _M.binding:get_fenv(_M.last_return_value))
+    setfenv(code_function, _M.binding:get_fenv())
 
     print_results(pcall(code_function))
   else
@@ -133,7 +141,7 @@ local function eval(text)
   local func = loadstring('return ' .. tostring(text))
   if not func then return end
 
-  setfenv(func, _M.binding:get_fenv(_M.last_return_value))
+  setfenv(func, _M.binding:get_fenv())
   local ok, result = pcall(func)
   if ok then return result end
 end
@@ -259,7 +267,7 @@ function readline.libreadline.rl_attempted_completion_function(word)
   end)
 end
 
-local start = function()
+_M.start = function()
   local caller_info = debug.getinfo(2)
 
   _M.running = true
@@ -267,9 +275,8 @@ local start = function()
   _M.binding = repl_binding.new(caller_info)
 
   while _M.running do
-    local line = readline(prompt_line())
-    callback_line_handler(line)
+    _M.callback_line_handler(readline(prompt_line()))
   end
 end
 
-return { start = start }
+return _M

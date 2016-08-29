@@ -72,14 +72,18 @@ local teardown = function()
   libreadline.rl_callback_handler_remove()
 end
 
+local write = function(text)
+  return libreadline.fwrite(text, #text, 1, libreadline.rl_outstream)
+end
+
 local puts = function(text)
-  if text then
-    text = tostring(text) .. '\n'
+  if nil == text then
+    text = ''
   else
-    text = '\n'
+    text = tostring(text)
   end
 
-  return libreadline.fwrite(text, #text, 1, libreadline.rl_outstream)
+  return write(text .. '\n')
 end
 
 local _M = setmetatable({
