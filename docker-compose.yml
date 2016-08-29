@@ -1,0 +1,10 @@
+app:
+  build: "."
+  container_name: "lua-resty-repl-tests"
+  volumes:
+    - ".:/lua-resty-repl"
+  working_dir: "/lua-resty-repl"
+  command:
+    - "/bin/sh"
+    - "-c"
+    - "luarocks make lua-resty-repl-dev-0.rockspec && resty-busted"
