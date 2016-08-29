@@ -1,0 +1,12 @@
+return {
+  _all = {
+    verbose = true,
+    ['shuffle-tests'] = true,
+    ['shuffle-files'] = true,
+    helper = 'spec/spec_helper.lua',
+  },
+  default = {
+  },
+}
+
+-- vim: ft=lua
