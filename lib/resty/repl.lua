@@ -16,6 +16,7 @@ local ffi = require 'ffi'
 
 local repl_binding = require 'resty.repl.binding'
 local readline = require 'resty.repl.readline'
+local compile = require('resty.repl.compiler').compile
 
 local _M = { _VERSION = '0.1' }
 
@@ -113,25 +114,14 @@ _M.callback_line_handler = function(chars)
     _M.exit(0)
   end
 
-  if '' == code then return end
+  if '' == code then return end -- do nothing for just <CR>
 
-  -- first, try to load function that returns value
-  local code_function, err = loadstring('return ' .. code, 'stdin')
+  local func, err = compile(code)
 
-  -- if failed, load function that returns nil
-  if not code_function then
-    code_function, err = loadstring(code, 'stdin')
-  end
+  if func then
+    setfenv(func, _M.binding:get_fenv())
 
-  if err then -- Maybe it's an expression.
-    -- This is a bad hack, but it might work well enough.
-    code_function = loadstring('return (' .. code .. ')', 'stdin')
-  end
-
-  if code_function then
-    setfenv(code_function, _M.binding:get_fenv())
-
-    print_results(pcall(code_function))
+    print_results(pcall(func))
   else
     readline.puts('ERROR: ' .. err)
   end

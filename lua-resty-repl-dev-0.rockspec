@@ -23,6 +23,7 @@ build = {
     ['resty.repl'] = 'lib/resty/repl.lua',
     ['resty.repl.binding'] = 'lib/resty/repl/binding.lua',
     ['resty.repl.readline'] = 'lib/resty/repl/readline.lua',
+    ['resty.repl.compiler'] = 'lib/resty/repl/compiler.lua',
     ['inspect'] = 'vendor/inspect.lua'
   }
 }
