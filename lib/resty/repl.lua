@@ -71,12 +71,11 @@ _M.callback_line_handler = function(chars)
 end
 
 local function eval(text)
-  local func = loadstring('return ' .. tostring(text))
-  if not func then return end
+  local result = _M.binding:eval(text)
 
-  setfenv(func, _M.binding:get_fenv())
-  local ok, result = pcall(func)
-  if ok then return result end
+  if result:is_success() then
+    return result:value()
+  end
 end
 
 local smart_completion = function(result)
