@@ -1,6 +1,41 @@
 local _M = {}
 
+local compile = require('resty.repl.compiler').compile
 local InstanceMethods = {}
+
+local table_pack = function(...)
+  return { n = select('#', ...), ... }
+end
+
+local result_mt = {}
+function result_mt:is_success()
+  return true == self[1]
+end
+
+function result_mt:value()
+  if not self:is_success() then return end
+
+  if 3 > self.n then return self[2] end
+
+  local res = {}
+  for i = 2, self.n do
+    table.insert(res, self[i])
+  end
+
+  return res
+end
+
+function result_mt:err()
+  if not self:is_success() then return self[2] end
+end
+
+function result_mt:has_return_value()
+  return self.n > 1
+end
+
+_M.eval_result = {
+  new = function (t) return setmetatable(t, { __index = result_mt }) end
+}
 
 local get_function_index = function(func)
   local caller_index = 1
@@ -14,6 +49,25 @@ local get_function_index = function(func)
 
     i = i + 1
   end
+end
+
+function InstanceMethods:eval(code)
+  local func, err = compile(code)
+
+  local result
+
+  if func and 'function' == type(func) then
+    setfenv(func, self:get_fenv())
+    result = _M.eval_result.new(table_pack(pcall(func)))
+
+    if result:is_success() then
+      self.env._ = result:value() -- update last return result
+    end
+  else
+    result = _M.eval_result.new { false, err, n = 2 }
+  end
+
+  return result
 end
 
 function InstanceMethods:local_var(name, ...)
@@ -97,10 +151,6 @@ function InstanceMethods:get_fenv()
       return value
     end
   })
-end
-
-function InstanceMethods:update_last_return_value(value)
-  self.env._ = value
 end
 
 function _M.new(caller_info)

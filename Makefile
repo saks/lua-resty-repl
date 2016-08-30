@@ -4,7 +4,7 @@ lint:
 	docker-compose run --rm app luacheck .
 
 test:
-	docker-compose run --rm app busted spec
+	docker-compose run --rm app resty-busted spec
 
 shell:
 	docker-compose run --rm app

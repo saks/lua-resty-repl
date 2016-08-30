@@ -11,12 +11,11 @@
 -- TODO: color output
 -- TODO: add specs
 
-local inspect = require 'inspect'
 local ffi = require 'ffi'
 
 local repl_binding = require 'resty.repl.binding'
 local readline = require 'resty.repl.readline'
-local compile = require('resty.repl.compiler').compile
+local formatter = require 'resty.repl.formatter'
 
 local _M = { _VERSION = '0.1' }
 
@@ -44,55 +43,6 @@ _M.chars_to_string = function(chars)
   return result
 end
 
-local function print_results(...)
-  local raw_return_values = { ... }
-  local return_value
-  local return_values = {}
-
-  local max_return_values_index = 0
-
-  -- determine number of return values
-  for k, _ in pairs(raw_return_values) do max_return_values_index = k end
-
-  for i = 2, max_return_values_index do
-    local value = raw_return_values[i]
-    if value == nil then
-      value = 'nil'
-    end
-    table.insert(return_values, value)
-  end
-
-  -- ignore (delete) return of xpcall ('success')
-  local return_values_len = max_return_values_index - 1
-
-  if 1 == return_values_len then
-    return_value = return_values[1]
-  elseif 1 < return_values_len then
-    return_value = return_values
-  else
-    return_value = nil
-  end
-
-  _M.binding:update_last_return_value(return_value)
-
-  local out = {}
-
-  -- print(inspect(readline.libreadline.rl_outstream))
-
-  if 'string' == type(return_value) then
-    table.insert(out, '=> ')
-    table.insert(out, return_value)
-  elseif _G.ngx and (_G.ngx.null == return_value) then
-    table.insert(out, '=> ')
-    table.insert(out, '<ngx.null>')
-  else
-    table.insert(out, '=> ')
-    table.insert(out, inspect(return_value))
-  end
-
-  readline.puts(table.concat(out))
-end
-
 _M.callback_line_handler = function(chars)
   local code
 
@@ -114,17 +64,10 @@ _M.callback_line_handler = function(chars)
     _M.exit(0)
   end
 
-  if '' == code then return end -- do nothing for just <CR>
+  assert(code, 'nothing to eval!')
 
-  local func, err = compile(code)
-
-  if func then
-    setfenv(func, _M.binding:get_fenv())
-
-    print_results(pcall(func))
-  else
-    readline.puts('ERROR: ' .. err)
-  end
+  local result = _M.binding:eval(code)
+  formatter.print(result, #code)
 end
 
 local function eval(text)
