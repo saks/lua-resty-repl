@@ -20,11 +20,13 @@ dependencies = {
 build = {
   type = 'builtin',
   modules = {
-    ['resty.repl'] = 'lib/resty/repl.lua',
-    ['resty.repl.binding'] = 'lib/resty/repl/binding.lua',
-    ['resty.repl.readline'] = 'lib/resty/repl/readline.lua',
-    ['resty.repl.compiler'] = 'lib/resty/repl/compiler.lua',
+    ['resty.repl']           = 'lib/resty/repl.lua',
+    ['resty.repl.binding']   = 'lib/resty/repl/binding.lua',
+    ['resty.repl.readline']  = 'lib/resty/repl/readline.lua',
+    ['resty.repl.compiler']  = 'lib/resty/repl/compiler.lua',
     ['resty.repl.formatter'] = 'lib/resty/repl/formatter.lua',
-    ['inspect'] = 'vendor/inspect.lua'
+    ['resty.repl.ui']        = 'lib/resty/repl/ui.lua',
+    ['resty.repl.completer'] = 'lib/resty/repl/completer.lua',
+    ['inspect']              = 'vendor/inspect.lua'
   }
 }

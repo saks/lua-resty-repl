@@ -1,0 +1,102 @@
+-- local function eval(text)
+--   local result = _M.binding:eval(text)
+--
+--   if result:is_success() then
+--     return result:value()
+--   end
+-- end
+--
+-- local smart_completion = function(result)
+--   if #result > 1 then
+--     return result
+--   else
+--     result = result[1]
+--   end
+--
+--   local prop      = eval(result)
+--   local prop_type = type(prop)
+--
+--   if 'function' == prop_type then
+--     if debug.getinfo(prop).nparams > 0 then
+--       readline.libreadline.rl_replace_line(result .. '()')
+--       readline.libreadline.rl_point = #result + 1
+--     else
+--       return { result .. '()' }
+--     end
+--   elseif 'table' == prop_type then
+--     readline.libreadline.rl_replace_line(result .. '.')
+--     readline.libreadline.rl_point = #result + 1
+--   else
+--     return { result }
+--   end
+-- end
+--
+-- local function find_matches_var(word)
+--   local result = {}
+--
+--   -- locals
+--   for _, k in ipairs(_M.binding:local_var()) do
+--     if k:match('^' .. word) then table.insert(result, k) end
+--   end
+--
+--   -- upvalues
+--   for _, k in ipairs(_M.binding:upvalue()) do
+--     if k:match('^' .. word) then table.insert(result, k) end
+--   end
+--
+--   -- fenv
+--   for k, _ in pairs(_M.binding.env) do
+--     if k:match('^' .. word) then table.insert(result, k) end
+--   end
+--
+--   return smart_completion(result)
+-- end
+--
+-- local function find_matches_prop(word, prop_prefix)
+--   if word:match('^(.+)%.$') then
+--     local base_obj_str = word:match('^(.+)%.$')
+--     local base_obj = eval(base_obj_str)
+--     if not base_obj then return end
+--
+--     if 'function' == type(base_obj) then
+--       readline.libreadline.rl_replace_line(base_obj_str .. '()')
+--       readline.libreadline.rl_point = #base_obj_str + 1
+--       return
+--     end
+--
+--     local result = {}
+--
+--     for k, _ in pairs(base_obj) do
+--       if prop_prefix then
+--         if k:match('^' .. prop_prefix) then
+--           table.insert(result, word .. k)
+--         end
+--       else
+--         table.insert(result, word .. k)
+--       end
+--     end
+--
+--     return smart_completion(result)
+--   else
+--     local already_good_obj = eval(word)
+--     if already_good_obj then
+--       return smart_completion({ word })
+--     else
+--       local object, prop = word:match('(.+)%.(.+)$')
+--       if (not object) or (not prop) then return end
+--       return find_matches_prop(object .. '.', prop)
+--     end
+--   end
+-- end
+--
+-- local function find_matches(word)
+--   -- don't compete from the function: some_func(<cursor>)
+--   if word:match('^[()]+$') then return end
+--
+--   if word == '' or word:match('^[^.]+$') then
+--     return find_matches_var(word)
+--   else
+--     return find_matches_prop(word)
+--   end
+-- end
+
