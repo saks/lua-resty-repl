@@ -24,7 +24,7 @@ Then just drop this snippet anywhere in your code:
 require('resty.repl').start()
 ```
 
-## Openrety debugger
+## Openresty debugger
 But what makes it really nice is that now you can debug your [openresty](http://openresty.org/en/) code right from running nginx!
 
 ```nginx
