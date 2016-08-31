@@ -3,9 +3,18 @@ local formatter = require 'resty.repl.formatter'
 local eval_result = require('resty.repl.binding').eval_result
 
 describe('formatter', function()
-  before_each(function() stub(readline, 'puts') end)
+  local debug = false
 
-  after_each(function() readline.puts:revert() end)
+  before_each(function()
+    stub(readline, 'puts', function(text)
+      if debug then print(text) end
+    end)
+  end)
+
+  after_each(function()
+    readline.puts:revert()
+    debug = false
+  end)
 
   it('should print string', function()
     formatter.print(eval_result.new { true, 'foo', n = 2 }, 10)
@@ -41,6 +50,13 @@ describe('formatter', function()
 
     assert.stub(readline.puts).was_called(1)
     assert.stub(readline.puts).was_called_with('=> nil')
+  end)
+
+  it('should print nil in the table', function()
+    formatter.print(eval_result.new { true, { nil, 'err' }, n = 2 }, 10)
+
+    assert.stub(readline.puts).was_called(1)
+    assert.stub(readline.puts).was_called_with('=> {\n  [2] = "err"\n}')
   end)
 
   it('should print nothing if no args', function()
