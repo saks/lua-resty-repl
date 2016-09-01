@@ -100,3 +100,13 @@
 --   end
 -- end
 
+local mt = {}
+function mt.find_matches(_, _)
+  return {}
+end
+
+local function new(binding)
+  return setmetatable({ binding = binding }, { __index = mt })
+end
+
+return { new = new }
