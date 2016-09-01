@@ -1,6 +1,9 @@
 #!/usr/bin/env lua
 
-local ffi = require 'ffi'
+local success, ffi = pcall(function() return require('ffi') end)
+if not success then
+  return require 'resty.repl.readline_stub'
+end
 
 ffi.cdef[[
   /* libc definitions */
@@ -58,14 +61,6 @@ local add_to_history = function(text)
   libreadline.add_history(text)
   -- FIXME: sync to the history file from nginx
   -- assert(0 == libreadline.write_history(history_file_name))
-end
-
-local read = function()
-  libreadline.rl_callback_read_char()
-end
-
-local setup = function(prompt, line_handler_callback)
-  libreadline.rl_callback_handler_install(prompt, line_handler_callback)
 end
 
 local teardown = function()
@@ -134,12 +129,8 @@ local readline = function(...)
 end
 
 local _M = setmetatable({
-  libreadline = libreadline,
-  read = read,
-  setup = setup,
   teardown = teardown,
   puts = puts,
-  set_prompt = libreadline.rl_set_prompt,
   set_attempted_completion_function = set_attempted_completion_function,
 }, { __call = function(_, ...) return readline(...) end })
 
