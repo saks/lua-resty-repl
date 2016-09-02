@@ -1,0 +1,107 @@
+#!/usr/bin/env luajit
+
+local loadstring = loadstring or load -- for lua 5.2 compat
+
+-- Tracekback (error printout)
+local function traceback(message)
+  local tp = type(message)
+  if tp ~= 'string' and tp ~= 'number' then return message end
+  local debug = _G.debug
+  if type(debug) ~= 'table' then return message end
+  local tb = debug.traceback
+  if type(tb) ~= 'function' then return message end
+  return tb(message)
+end
+
+-- help
+local help = [==[
+Usage: resty-repl [options] [script.lua [arguments]]
+
+Options:
+-l name            load library name
+-e statement       execute statement
+-h, --help          print this help ]==]
+
+-- parse arguments
+local run, progargs, statement, lib, _
+local parg = arg
+local nextarg
+for _, arg in ipairs(parg) do
+  -- nextarg set?
+  if nextarg == 'exec' then
+    statement = arg
+    nextarg = nil
+  elseif nextarg == 'lib' then
+    lib = arg
+    nextarg = nil
+  elseif not progargs then
+    _, _, lib = arg:find('^%-l(.*)')
+    if lib == '' then lib = nil end
+  end
+  -- load libraries
+  if lib then
+    local ok, err = xpcall(function() require(lib) end, traceback)
+    if not ok then
+      print('could not load ' .. lib .. ', skipping')
+      print(err)
+    end
+  elseif progargs then
+    -- program args
+    table.insert(progargs, arg)
+  elseif not statement then
+    -- option?
+    local _, _, option = arg:find('^%-%-(.*)')
+    local shortopt
+    if not option then
+      _, _, shortopt = arg:find('^%-(.*)')
+    end
+    if option or shortopt then
+      -- help
+      if shortopt == 'h' or option == 'help' then
+        print(help)
+        return
+      elseif shortopt == 'e' then
+        nextarg = 'exec'
+      elseif shortopt == 'l' then
+        nextarg = 'lib'
+      else
+        -- unknown
+        print('Error: unrecognized flag --' .. (option ~= nil and option or shortopt))
+        print(help)
+        return
+      end
+    else
+      -- exec program
+      run = arg
+      progargs = {}
+      for k, v in pairs(parg) do
+        if k <= 0 then
+          progargs[k] = v
+        end
+      end
+    end
+  end
+end
+
+-- statement
+if statement then
+  -- exec statement:
+  local s = loadstring(statement)
+  local ok, res = pcall(s)
+  if not ok then
+    print(res)
+    return
+  end
+  -- quit by default
+  if not interactive then return end
+end
+
+-- run program
+if run then
+  -- set prog args:
+  arg = progargs
+  -- run
+  dofile(run)
+end
+
+require('resty.repl').start()

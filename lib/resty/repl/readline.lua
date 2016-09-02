@@ -1,6 +1,9 @@
 #!/usr/bin/env lua
 
-local ffi = require 'ffi'
+local success, ffi = pcall(function() return require('ffi') end)
+if not success then
+  return require 'resty.repl.readline_stub'
+end
 
 ffi.cdef[[
   /* libc definitions */
@@ -60,14 +63,6 @@ local add_to_history = function(text)
   -- assert(0 == libreadline.write_history(history_file_name))
 end
 
-local read = function()
-  libreadline.rl_callback_read_char()
-end
-
-local setup = function(prompt, line_handler_callback)
-  libreadline.rl_callback_handler_install(prompt, line_handler_callback)
-end
-
 local teardown = function()
   libreadline.rl_callback_handler_remove()
 end
@@ -86,14 +81,57 @@ local puts = function(text)
   return write(text .. '\n')
 end
 
+local function set_attempted_completion_function(callback)
+  function libreadline.rl_attempted_completion_function(word)
+    local strword = ffi.string(word)
+    local buffer = ffi.string(libreadline.rl_line_buffer)
+
+    local matches = callback(strword, buffer)
+
+    if not matches then return nil end
+
+    -- if matches is an empty array, tell readline to not call default completion (file)
+    libreadline.rl_attempted_completion_over = 1
+
+    -- translate matches table to C strings
+    -- (there is probably more efficient ways to do it)
+    return libreadline.rl_completion_matches(word, function(_, i)
+      local match = matches[i + 1]
+
+      if match then
+        -- readline will free the C string by itself, so create copies of them
+        local buf = ffi.C.malloc(#match + 1)
+        ffi.copy(buf, match, #match + 1)
+        return buf
+      else
+        return ffi.new('void*', nil)
+      end
+    end)
+  end
+end
+
+local chars_to_string = function(chars)
+  local result = ffi.string(chars)
+  ffi.C.free(chars)
+  return result
+end
+
+local readline = function(...)
+  local chars = libreadline.readline(...)
+  local line
+
+  if chars ~= nil then
+    line = chars_to_string(chars)
+    add_to_history(line)
+  end
+
+  return line
+end
+
 local _M = setmetatable({
-  libreadline = libreadline,
-  add_to_history = add_to_history,
-  read = read,
-  setup = setup,
   teardown = teardown,
   puts = puts,
-  set_prompt = libreadline.rl_set_prompt,
-}, { __call = function(_, ...) return libreadline.readline(...) end })
+  set_attempted_completion_function = set_attempted_completion_function,
+}, { __call = function(_, ...) return readline(...) end })
 
 return _M

@@ -30,7 +30,7 @@ describe('resty repl binding', function()
       }
     end
 
-    local result = caller_function('caller_arg')
+    local result = caller_function('caller_arg_value')
     result.invisible_outer_local = invisible_outer_local
 
     return result
@@ -55,8 +55,8 @@ describe('resty repl binding', function()
   it('should return local arg', function()
     local result, outer_func_ret = run 'caller_arg'
 
-    assert.are_same({ true, 'caller_arg', n = 2 }, result)
-    assert.are_equal('caller_arg', outer_func_ret.caller_arg)
+    assert.are_same({ true, 'caller_arg_value', n = 2 }, result)
+    assert.are_equal('caller_arg_value', outer_func_ret.caller_arg)
   end)
 
   it('should return upvalue', function()
@@ -80,11 +80,12 @@ describe('resty repl binding', function()
     assert.are_equal(123, outer_func_ret.caller_local)
   end)
 
-  -- FIXME: update local function args
-  -- it('should update local args', function()
-  --   local result = local result, outer_func_ret = run 'caller_arg = "123"'
-  --   assert.are_equal('123', result.caller_local)
-  -- end)
+  it('should update local args', function()
+    local result, outer_func_ret = run 'caller_arg = "123"; return caller_arg'
+
+    assert.are_same({ true, '123', n = 2 }, result)
+    assert.are_equal('123', outer_func_ret.caller_arg)
+  end)
 
   it('should update upvalues', function()
     local result, outer_func_ret = run 'outer_local = 123'

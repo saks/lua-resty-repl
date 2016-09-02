@@ -81,9 +81,7 @@ function InstanceMethods:local_var(name, ...)
 
   while true do
     local var_name, var_value = debug.getlocal(index, i)
-    if not var_name then
-      if name then return else return all_names end
-    end
+    if not var_name then break end
 
     if name then
       if name == var_name then
@@ -100,6 +98,12 @@ function InstanceMethods:local_var(name, ...)
     end
 
     i = i + 1
+  end
+
+  if name then
+    return
+  else
+    return all_names
   end
 end
 
