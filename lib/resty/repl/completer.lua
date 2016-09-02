@@ -1,5 +1,7 @@
 local _M = {}
 
+local method_re = '^(.+):$'
+
 function _M:eval(text)
   local result = self.binding:eval(text)
 
@@ -61,7 +63,49 @@ function _M:find_matches_var(word)
 end
 
 function _M:find_matches_prop(word, prop_prefix)
-  if word:match('^(.+)%.$') then
+  if word:match(method_re) then
+    local base_obj_str = word:match(method_re)
+    local base_obj = self:eval(base_obj_str)
+    if not base_obj then return end
+
+    if 'table' ~= type(base_obj) then
+      return { base_obj_str }
+    end
+
+    local result = {}
+
+    -- search for own methods
+    for k, v in pairs(base_obj) do
+      if 'function' == type(v) then
+        if prop_prefix then
+          if k:match('^' .. prop_prefix) then
+            table.insert(result, word .. k .. '()')
+          end
+        else
+          table.insert(result, word .. k)
+        end
+      end
+    end
+
+    -- search for meta methods
+    local mt = getmetatable(base_obj)
+    if mt and 'table' == type(mt.__index) then
+      for k, v in pairs(mt.__index) do
+        if 'function' == type(v) then
+          if prop_prefix then
+            if k:match('^' .. prop_prefix) then
+              table.insert(result, word .. k .. '()')
+            end
+          else
+            table.insert(result, word .. k)
+          end
+        end
+      end
+    end
+
+    return self:smart_completion(result)
+
+  elseif word:match('^(.+)%.$') then
     local base_obj_str = word:match('^(.+)%.$')
     local base_obj = self:eval(base_obj_str)
     if not base_obj then return end
@@ -107,9 +151,9 @@ function _M:find_matches_prop(word, prop_prefix)
     if already_good_obj then
       return self:smart_completion({ word })
     else
-      local object, prop = word:match('(.+)%.(.+)$')
+      local object, dot, prop = word:match('(.+)([.:])(.+)$')
       if (not object) or (not prop) then return end
-      return self:find_matches_prop(object .. '.', prop)
+      return self:find_matches_prop(object .. dot, prop)
     end
   end
 end
@@ -118,7 +162,7 @@ function _M:find_matches(word)
   -- don't compete from the function: some_func(<cursor>)
   if word:match('^[()]+$') then return end
 
-  if word == '' or word:match('^[^.]+$') then
+  if word == '' or word:match('^[^.:]+$') then
     return self:find_matches_var(word)
   else
     return self:find_matches_prop(word)

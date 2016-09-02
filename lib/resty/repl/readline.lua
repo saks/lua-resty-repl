@@ -57,6 +57,8 @@ local libreadline = ffi.load 'libreadline.so.6'
 -- read history from file
 libreadline.read_history_range(readline_utils.history_fn(), 0, -1)
 
+libreadline.rl_basic_word_break_characters = " \t\n\"\\'><=;+-*/%^~#{}()[],"
+
 local add_to_history = function(text)
   libreadline.add_history(text)
   assert(0 == libreadline.write_history(readline_utils.history_fn()),
