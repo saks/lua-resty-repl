@@ -43,11 +43,15 @@ end
 describe('repl completer', function()
   it('should complete local vars', function()
     assert.are_same({ 'myngx' }, complete 'myn')
-    assert.are_same({ 'myngx.req', 'myngx.print', 'myngx.xprint' },
-      complete 'myngx.')
-    assert.are_same({ 'myngx.req' }, complete 'myngx.re')
-    assert.are_same({ 'myngx.req.get_body_file', 'myngx.req.get_body_data' },
-      complete 'myngx.req.get_')
+    assert.are_same(
+      { 'myngx.req.', 'myngx.print()', 'myngx.xprint()' },
+      complete 'myngx.'
+    )
+    assert.are_same({ 'myngx.req.' }, complete 'myngx.re')
+    assert.are_same(
+      { 'myngx.req.get_body_file()', 'myngx.req.get_body_data()' },
+      complete 'myngx.req.get_'
+    )
     assert.are_same({ 'myngx.req.get_body_data()' },
       complete 'myngx.req.get_body_d')
   end)
@@ -104,12 +108,18 @@ describe('repl completer', function()
 
   context('methods', function()
     it('should complete list of methods', function()
-      assert.are_same({ 'myngx:print', 'myngx:xprint' }, complete 'myngx:')
+      assert.are_same({ 'myngx:print()', 'myngx:xprint()' }, complete 'myngx:')
     end)
 
     it('should complete method name', function()
       assert.are_same({ 'myngx:print()' }, complete 'myngx:pri')
       assert.are_same({ 'myngx:xprint()' }, complete 'myngx:xp')
+    end)
+  end)
+
+  context('edge cases', function()
+    it('should not fail', function()
+      assert.are_same({}, complete 'myngx:xprint(')
     end)
   end)
 end)
