@@ -9,16 +9,18 @@ local test_completer = function()
   result = completer:find_matches(word)
 end
 
+local upvalue_with_mt = setmetatable({ foo = 'bar' }, {
+  __index = { bar = 'foo' }
+})
+
 local example_function = function(local_arg)
   assert(local_arg)
   assert(new_binding)
   assert(new_completer)
+  assert(upvalue_with_mt)
 
   local myngx = {
-    req = {
-      get_body_data = function() end,
-      get_body_file = function() end,
-    }
+    req = { get_body_data = function() end, get_body_file = function() end }
   }
 
   test_completer()
@@ -56,7 +58,24 @@ describe('repl completer', function()
     assert.are_same({ 'debug.getlocal()' }, complete 'debug.getl')
   end)
 
-  it('should complete globals', function()
-    assert.are_same({ 'debug.getlocal()' }, complete 'debug.getl')
+  context('object with metatable', function()
+    it('should complete own keys', function()
+      assert.are_same({ 'upvalue_with_mt.foo' }, complete 'upvalue_with_mt.f')
+    end)
+
+    it('should complete meta keys', function()
+      assert.are_same({ 'upvalue_with_mt.bar' }, complete 'upvalue_with_mt.b')
+    end)
+  end)
+
+  context('values in _G', function()
+    before_each(function() _G.foo = { bar = 'buz' } end)
+    after_each(function() _G.foo = nil end)
+
+    it('should complete', function()
+      assert.are_same({ 'foo' }, complete 'fo')
+      assert.are_same({ 'foo.bar' }, complete 'foo.')
+      assert.are_same({ 'foo.bar' }, complete 'foo.bar.b')
+    end)
   end)
 end)

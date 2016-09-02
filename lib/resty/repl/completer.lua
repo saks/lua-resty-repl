@@ -27,20 +27,26 @@ end
 
 function _M:find_matches_var(word)
   local result = {}
+  local re = '^' .. word
 
   -- locals
   for _, k in ipairs(self.binding:local_var()) do
-    if k:match('^' .. word) then table.insert(result, k) end
+    if k:match(re) then table.insert(result, k) end
   end
 
   -- upvalues
   for _, k in ipairs(self.binding:upvalue()) do
-    if k:match('^' .. word) then table.insert(result, k) end
+    if k:match(re) then table.insert(result, k) end
   end
 
   -- fenv
   for k, _ in pairs(self.binding.env) do
-    if k:match('^' .. word) then table.insert(result, k) end
+    if k:match(re) then table.insert(result, k) end
+  end
+
+  -- _G
+  for k, _ in pairs(_G) do
+    if k:match(re) then table.insert(result, k) end
   end
 
   return self:smart_completion(result)
@@ -56,8 +62,13 @@ function _M:find_matches_prop(word, prop_prefix)
       return { base_obj_str .. '()' }
     end
 
+    if 'table' ~= type(base_obj) then
+      return { base_obj_str }
+    end
+
     local result = {}
 
+    -- search for own keys
     for k, _ in pairs(base_obj) do
       if prop_prefix then
         if k:match('^' .. prop_prefix) then
@@ -65,6 +76,20 @@ function _M:find_matches_prop(word, prop_prefix)
         end
       else
         table.insert(result, word .. k)
+      end
+    end
+
+    -- search for meta keys
+    local mt = getmetatable(base_obj)
+    if mt and 'table' == type(mt.__index) then
+      for k, _ in pairs(mt.__index) do
+        if prop_prefix then
+          if k:match('^' .. prop_prefix) then
+            table.insert(result, word .. k)
+          end
+        else
+          table.insert(result, word .. k)
+        end
       end
     end
 
