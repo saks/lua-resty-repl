@@ -49,6 +49,14 @@ function _M:find_matches_var(word)
     if k:match(re) then table.insert(result, k) end
   end
 
+  -- _G metatable
+  local _G_mt = getmetatable(_G)
+  if 'table' == type(_G_mt) and 'table' == type(_G_mt.__index) then
+    for k, _ in pairs(_G_mt.__index) do
+      if k:match(re) then table.insert(result, k) end
+    end
+  end
+
   return self:smart_completion(result)
 end
 

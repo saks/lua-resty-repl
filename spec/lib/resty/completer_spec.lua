@@ -78,4 +78,20 @@ describe('repl completer', function()
       assert.are_same({ 'foo.bar' }, complete 'foo.bar.b')
     end)
   end)
+
+  context('values in _G metatable', function()
+    local _G_mt = getmetatable(_G)
+
+    before_each(function()
+      setmetatable(_G, { __index = { foo = { bar = 'buz' } }})
+    end)
+
+    after_each(function() setmetatable(_G, _G_mt) end)
+
+    it('should complete', function()
+      assert.are_same({ 'foo' }, complete 'fo')
+      assert.are_same({ 'foo.bar' }, complete 'foo.')
+      assert.are_same({ 'foo.bar' }, complete 'foo.bar.b')
+    end)
+  end)
 end)
