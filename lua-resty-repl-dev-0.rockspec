@@ -12,7 +12,7 @@ description = {
     https://github.com/kikito/inspect.lua library.
   ]],
   homepage = 'https://github.com/saks/lua-resty-repl',
-  license = 'GNU General Public License Version 2'
+  license = 'MIT'
 }
 dependencies = {
   'lua >= 5.1'
