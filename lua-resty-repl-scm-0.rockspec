@@ -1,8 +1,8 @@
 package = 'lua-resty-repl'
-version = '0.0.2-0'
+version = 'scm-0'
 source = {
   url = 'git://github.com/saks/lua-resty-repl',
-  tag = 'v0.0.2'
+  branch = 'master'
 }
 description = {
   summary = 'repl for openresty.',
