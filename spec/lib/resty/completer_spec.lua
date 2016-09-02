@@ -43,10 +43,9 @@ describe('repl completer', function()
       complete 'myngx.req.get_body_d')
   end)
 
-  -- FIXME:
-  -- it('should complete local args', function()
-  --   assert.are_same({ 'local_arg', complete 'loca' })
-  -- end)
+  it('should complete local args', function()
+    assert.are_same({ 'local_arg' }, complete 'loc')
+  end)
 
   it('should complete upvalues', function()
     assert.are_same({ 'new_binding', 'new_completer' }, complete 'new_')
