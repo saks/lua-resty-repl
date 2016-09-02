@@ -87,6 +87,21 @@ nginx: [alert] lua_code_cache is off; this will hurt performance in /tmp/ngx.con
 172.17.0.1 - - [30/Aug/2016:19:27:23 +0000] "GET /?foo=bar HTTP/1.1" 200 20 "-" "curl/7.47.0"
 ```
 
+## Troubleshooting
+#### Console stuck after the first command entered
+First of all make sure that history file path is writable. To find your history file path run the following command:
+```bash
+lua -e "print(require('resty.repl.readline_utils').history_fn())"
+```
+or
+```bash
+luajit -e "print(require('resty.repl.readline_utils').history_fn())"
+```
+or
+```bash
+resty -e "print(require('resty.repl.readline_utils').history_fn())"
+```
+
 ## Code Status
 
 [![Build Status](https://travis-ci.org/saks/lua-resty-repl.svg?branch=master)](https://travis-ci.org/saks/lua-resty-repl)

@@ -24,6 +24,7 @@ build = {
     ['resty.repl.binding']       = 'lib/resty/repl/binding.lua',
     ['resty.repl.readline']      = 'lib/resty/repl/readline.lua',
     ['resty.repl.readline_stub'] = 'lib/resty/repl/readline_stub.lua',
+    ['resty.repl.readline_utils'] = 'lib/resty/repl/readline_utils.lua',
     ['resty.repl.compiler']      = 'lib/resty/repl/compiler.lua',
     ['resty.repl.formatter']     = 'lib/resty/repl/formatter.lua',
     ['resty.repl.ui']            = 'lib/resty/repl/ui.lua',

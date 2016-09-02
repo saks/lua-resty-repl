@@ -1,5 +1,7 @@
 #!/usr/bin/env lua
 
+local readline_utils = require 'resty.repl.readline_utils'
+
 local success, ffi = pcall(function() return require('ffi') end)
 if not success then
   return require 'resty.repl.readline_stub'
@@ -52,15 +54,14 @@ ffi.cdef[[
 
 local libreadline = ffi.load 'libreadline.so.6'
 
-local history_file_name = '/root/.resty_history'
-
 -- read history from file
-libreadline.read_history_range(history_file_name, 0, -1)
+libreadline.read_history_range(readline_utils.history_fn(), 0, -1)
 
 local add_to_history = function(text)
   libreadline.add_history(text)
-  -- FIXME: sync to the history file from nginx
-  -- assert(0 == libreadline.write_history(history_file_name))
+  assert(0 == libreadline.write_history(readline_utils.history_fn()),
+    'Cannot write history. Make sure path is writable: '
+    .. readline_utils.history_fn())
 end
 
 local teardown = function()
