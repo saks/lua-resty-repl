@@ -31,11 +31,22 @@ describe('formatter', function()
   end)
 
   it('should print ngx.null', function()
-    local ngx = _G.ngx
+    local _G_ngx = _G.ngx
+    local ngx
+
+    if _G_ngx then
+      ngx = _G_ngx
+    else
+      ngx = { null = {} }
+      _G.ngx = ngx
+    end
+
     formatter.print(eval_result.new { true, ngx.null, n = 2 }, 10)
 
     assert.stub(readline.puts).was_called(1)
     assert.stub(readline.puts).was_called_with '=> <ngx.null>'
+
+    _G.ngx = _G_ngx
   end)
 
   it('should print table', function()

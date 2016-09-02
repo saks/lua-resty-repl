@@ -32,6 +32,7 @@ ffi.cdef[[
   rl_completion_func_t *rl_attempted_completion_function;
   char *rl_line_buffer;
   int rl_completion_append_character;
+  int rl_completion_suppress_append;
   int rl_attempted_completion_over;
 
   void rl_callback_handler_install (const char *prompt, rl_vcpfunc_t *lhandler);
@@ -56,6 +57,7 @@ local libreadline = ffi.load 'libreadline.so.6'
 
 -- read history from file
 libreadline.read_history_range(readline_utils.history_fn(), 0, -1)
+
 
 local add_to_history = function(text)
   libreadline.add_history(text)
@@ -93,6 +95,7 @@ local function set_attempted_completion_function(callback)
 
     -- if matches is an empty array, tell readline to not call default completion (file)
     libreadline.rl_attempted_completion_over = 1
+    libreadline.rl_completion_suppress_append = 1
 
     -- translate matches table to C strings
     -- (there is probably more efficient ways to do it)

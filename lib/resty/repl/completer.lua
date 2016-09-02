@@ -1,5 +1,15 @@
 local _M = {}
 
+local property_re = '^(.+)[:.]$'
+
+local function safe_match(str, re)
+  local ok, res = pcall(function()
+    return string.match(str, re)
+  end)
+
+  return ok and res
+end
+
 function _M:eval(text)
   local result = self.binding:eval(text)
 
@@ -31,75 +41,105 @@ function _M:find_matches_var(word)
 
   -- locals
   for _, k in ipairs(self.binding:local_var()) do
-    if k:match(re) then table.insert(result, k) end
+    if safe_match(k, re) then table.insert(result, k) end
   end
 
   -- upvalues
   for _, k in ipairs(self.binding:upvalue()) do
-    if k:match(re) then table.insert(result, k) end
+    if safe_match(k, re) then table.insert(result, k) end
   end
 
   -- fenv
   for k, _ in pairs(self.binding.env) do
-    if k:match(re) then table.insert(result, k) end
+    if safe_match(k, re) then table.insert(result, k) end
   end
 
   -- _G
   for k, _ in pairs(_G) do
-    if k:match(re) then table.insert(result, k) end
+    if safe_match(k, re) then table.insert(result, k) end
   end
 
   -- _G metatable
   local _G_mt = getmetatable(_G)
   if 'table' == type(_G_mt) and 'table' == type(_G_mt.__index) then
     for k, _ in pairs(_G_mt.__index) do
-      if k:match(re) then table.insert(result, k) end
+      if safe_match(k, re) then table.insert(result, k) end
     end
   end
 
   return self:smart_completion(result)
 end
 
+function _M.find_prop_in_object(object, options)
+  local prop_prefix = options.prop_prefix
+  local word        = options.word
+  local result = {}
+
+  -- search for own methods
+  for k, v in pairs(object) do
+    local v_type = type(v)
+    if 'function' == v_type then k = k .. '()' end
+    if 'table'    == v_type then k = k .. '.' end
+    table.insert(result, { k, type(v) })
+  end
+
+  -- search for meta methods
+  local mt = getmetatable(object)
+  if mt and 'table' == type(mt.__index) then
+    for k, v in pairs(mt.__index) do
+      local v_type = type(v)
+      if 'function' == v_type then k = k .. '()' end
+      if 'table'    == v_type then k = k .. '.' end
+      table.insert(result, { k, v_type })
+    end
+  end
+
+  -- filter by property prefix
+  if prop_prefix then
+    local not_filterd = result
+    result = {}
+    for _, key_value_pair in ipairs(not_filterd) do
+      if safe_match(key_value_pair[1], '^' .. prop_prefix) then
+        table.insert(result, key_value_pair)
+      end
+    end
+  end
+
+  -- filter by value type
+  if word:match ':$' then -- completing method name
+    local not_filterd = result
+    result = {}
+    for _, key_value_pair in ipairs(not_filterd) do
+      if key_value_pair[2] == 'function' then
+        table.insert(result, key_value_pair)
+      end
+    end
+  end
+
+  -- prepend with word
+  for i, key_value_pair in ipairs(result) do
+    result[i] = word .. key_value_pair[1]
+  end
+
+  return result
+end
+
 function _M:find_matches_prop(word, prop_prefix)
-  if word:match('^(.+)%.$') then
-    local base_obj_str = word:match('^(.+)%.$')
+  if safe_match(word, property_re) then
+    local base_obj_str = safe_match(word, property_re)
     local base_obj = self:eval(base_obj_str)
     if not base_obj then return end
 
-    if 'function' == type(base_obj) then
-      return { base_obj_str .. '()' }
-    end
+    if 'function' == type(base_obj) then return { base_obj_str .. '()' } end
 
-    if 'table' ~= type(base_obj) then
-      return { base_obj_str }
-    end
+    -- we're trying to complete property name, so if base object
+    -- is not a table, we just return it.
+    if 'table' ~= type(base_obj) then return { base_obj_str } end
 
-    local result = {}
-
-    -- search for own keys
-    for k, _ in pairs(base_obj) do
-      if prop_prefix then
-        if k:match('^' .. prop_prefix) then
-          table.insert(result, word .. k)
-        end
-      else
-        table.insert(result, word .. k)
-      end
-    end
-
-    -- search for meta keys
-    local mt = getmetatable(base_obj)
-    if mt and 'table' == type(mt.__index) then
-      for k, _ in pairs(mt.__index) do
-        if prop_prefix then
-          if k:match('^' .. prop_prefix) then
-            table.insert(result, word .. k)
-          end
-        else
-          table.insert(result, word .. k)
-        end
-      end
-    end
+    local result = self.find_prop_in_object(base_obj, {
+      prop_prefix = prop_prefix,
+      word        = word,
+    })
 
     return self:smart_completion(result)
   else
@@ -107,9 +147,9 @@ function _M:find_matches_prop(word, prop_prefix)
     if already_good_obj then
       return self:smart_completion({ word })
     else
-      local object, prop = word:match('(.+)%.(.+)$')
+      local object, dot, prop = word:match('(.+)([.:])(.+)$')
       if (not object) or (not prop) then return end
-      return self:find_matches_prop(object .. '.', prop)
+      return self:find_matches_prop(object .. dot, prop)
     end
   end
 end
@@ -118,7 +158,7 @@ function _M:find_matches(word)
   -- don't compete from the function: some_func(<cursor>)
   if word:match('^[()]+$') then return end
 
-  if word == '' or word:match('^[^.]+$') then
+  if word == '' or word:match('^[^.:]+$') then
     return self:find_matches_var(word)
   else
     return self:find_matches_prop(word)
