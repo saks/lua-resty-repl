@@ -5,3 +5,11 @@ app:
   volumes:
     - ".:/lua-resty-repl"
   working_dir: "/lua-resty-repl"
+
+lua51:
+  image: "saksmlz/lua51-testsuite:latest"
+  command: "sh"
+  container_name: "lua-resty-repl-tests"
+  volumes:
+    - ".:/lua-resty-repl"
+  working_dir: "/lua-resty-repl"

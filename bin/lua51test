@@ -1,0 +1,4 @@
+#!/bin/sh
+
+eval $(luarocks-5.1 path --bin)
+exec lua5.1 -e "require \"busted.runner\"{standalone = false}"
