@@ -1,10 +1,20 @@
 language: bash
 
+cache:
+  directories:
+    - /home/travis/docker/
+
+env:
+  global:
+    - OPENRESTY_IMAGE=/home/travis/docker/openresty_image.tar.gz
+    - LUA51_IMAGE=/home/travis/docker/LUA51_IMAGE.tar.gz
+
 services:
   - docker
 
 before_install:
-  - docker-compose pull app lua51
+  - if [ -f ${OPENRESTY_IMAGE} ]; then gunzip -c ${OPENRESTY_IMAGE} | docker load; else docker-compose pull app; docker save saksmlz/openresty-testsuite:latest | gzip > ${OPENRESTY_IMAGE}; fi
+  - if [ -f ${LUA51_IMAGE} ]; then gunzip -c ${LUA51_IMAGE} | docker load; else docker-compose pull lua51; docker save saksmlz/lua51-testsuite:latest | gzip > ${LUA51_IMAGE}; fi
 
 script:
   - make
