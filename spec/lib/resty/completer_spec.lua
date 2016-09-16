@@ -43,9 +43,11 @@ end
 describe('repl completer', function()
   it('should complete local vars', function()
     assert.are_same({ 'myngx' }, complete 'myn')
+    local res = complete 'myngx.'
+    table.sort(res)
     assert.are_same(
-      { 'myngx.req.', 'myngx.print()', 'myngx.xprint()' },
-      complete 'myngx.'
+      { 'myngx.print()', 'myngx.req.', 'myngx.xprint()' },
+      res
     )
     assert.are_same({ 'myngx.req.' }, complete 'myngx.re')
     assert.are_same(
