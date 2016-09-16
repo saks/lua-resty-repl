@@ -84,6 +84,8 @@ describe('repl completer', function()
     assert.are_same({ 'debug.getlocal()' }, complete 'debug.getl')
   end)
 
+  -- TODO: more specs
+
   context('object with metatable', function()
     it('should complete own keys', function()
       assert.are_same({ 'upvalue_with_mt.foo' }, complete 'upvalue_with_mt.f')

@@ -24,7 +24,10 @@ local function readline(prompt)
   return io.read()
 end
 
+local set_startup_hook = function() end
+
 local _M = setmetatable({
+  set_startup_hook = set_startup_hook,
   teardown = teardown,
   puts = puts,
   set_attempted_completion_function = set_attempted_completion_function,
