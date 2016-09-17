@@ -14,9 +14,16 @@ describe('resty repl binding', function()
   local outer_function = function(outer_arg)
     local outer_local = 'outer_local'
     local invisible_outer_local = 'invisible_outer_local'
+    local upvalue_false = false
 
     local caller_function = function(caller_arg)
       local caller_local = 'caller_local'
+      local caller_local_nil = nil
+      local caller_local_false = false
+
+      assert(caller_local_nil == nil)
+      assert(caller_local_false == false)
+      assert(upvalue_false == false)
 
       caller_info = debug.getinfo(1)
 
@@ -25,6 +32,10 @@ describe('resty repl binding', function()
       return {
         caller_local = caller_local,
         caller_arg   = caller_arg,
+        caller_local_nil = caller_local_nil,
+        caller_local_nil_type = type(caller_local_nil),
+        caller_local_false = caller_local_false,
+        caller_local_false_type = type(caller_local_false),
         outer_local  = outer_local,
         outer_arg    = outer_arg,
       }
@@ -50,6 +61,43 @@ describe('resty repl binding', function()
   it('should return locals', function()
     local _, outer_func_ret = run 'caller_local'
     assert.are_equal('caller_local', outer_func_ret.caller_local)
+  end)
+
+  it('should return locals with nil value', function()
+    local result = run 'caller_local_nil'
+    assert.are_same({ true, nil, n = 2 }, result)
+  end)
+
+  it('should return locals with false value', function()
+    local result = run 'caller_local_false'
+    assert.are_same({ true, false, n = 2 }, result)
+  end)
+
+  it('should return upvalues with false value', function()
+    local result = run 'upvalue_false'
+    assert.are_same({ true, false, n = 2 }, result)
+  end)
+
+  it('should be able to set locals with false value', function()
+    local result = run 'caller_local_false = 123; return caller_local_false'
+    assert.are_same({ true, 123, n = 2 }, result)
+  end)
+
+  it('should be able to set upvalues with false value', function()
+    local result = run 'upvalue_false = 123; return upvalue_false'
+    assert.are_same({ true, 123, n = 2 }, result)
+  end)
+
+  it('should return locals with nil value even if global is not nil', function()
+    local _, outer_func_ret = run '_G.caller_local_nil = 123'
+    assert.are_equal('nil', outer_func_ret.caller_local_nil_type)
+  end)
+
+  it('should set locals with nil value', function()
+    local _, outer_func_ret = run 'caller_local_nil = 123'
+
+    assert.are_equal('number', outer_func_ret.caller_local_nil_type)
+    assert.are_equal(123, outer_func_ret.caller_local_nil)
   end)
 
   it('should return local arg', function()

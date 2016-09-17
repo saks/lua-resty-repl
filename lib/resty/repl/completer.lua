@@ -40,12 +40,12 @@ function _M:find_matches_var(word)
   local re = '^' .. word
 
   -- locals
-  for _, k in ipairs(self.binding:local_var()) do
+  for _, k in ipairs(self.binding:find_local_var(re, true)) do
     if safe_match(k, re) then table.insert(result, k) end
   end
 
   -- upvalues
-  for _, k in ipairs(self.binding:upvalue()) do
+  for _, k in ipairs(self.binding:find_upvalue(re, true)) do
     if safe_match(k, re) then table.insert(result, k) end
   end
 

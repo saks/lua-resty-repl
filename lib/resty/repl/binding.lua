@@ -7,6 +7,15 @@ local table_pack = function(...)
   return { n = select('#', ...), ... }
 end
 
+-- FIXME: DRY
+local function safe_match(str, re)
+  local ok, res = pcall(function()
+    return string.match(str, re)
+  end)
+
+  return ok and res
+end
+
 local result_mt = {}
 function result_mt:is_success()
   return true == self[1]
@@ -70,87 +79,94 @@ function InstanceMethods:eval(code)
   return result
 end
 
-function InstanceMethods:local_var(name, ...)
+--- Local Vars:
+function InstanceMethods:find_local_var(name, match)
   local func = self.info.func
   if 'function' ~= type(func) then return end
 
   local index = get_function_index(func) - 1
   local i = 1
-
   local all_names = {}
 
   while true do
     local var_name, var_value = debug.getlocal(index, i)
     if not var_name then break end
 
-    if name then
-      if name == var_name then
-        if 1 == select('#', ...) then
-          local new_value = select(1, ...)
-          debug.setlocal(index, i, new_value)
-          return true
-        else
-          return var_value
-        end
-      end
-    else
+    if match and safe_match(var_name, name) then
       table.insert(all_names, var_name)
+    elseif name == var_name then
+      -- "index - 1" is because stack will become deeper for a caller
+      return true, var_name, var_value, index - 1, i
     end
 
     i = i + 1
   end
 
-  if name then
-    return
-  else
-    return all_names
+  if match then return all_names end
+end
+
+function InstanceMethods:set_local_var(name, value)
+  local ok, _, _, index, var_index = self:find_local_var(name)
+
+  if ok then
+    debug.setlocal(index, var_index, value)
+    return true
   end
 end
 
-function InstanceMethods:upvalue(name, ...)
+--- Upvalues:
+function InstanceMethods:find_upvalue(name, match)
   local func = self.info.func
-
   if 'function' ~= type(func) then return end
 
   local i = 1
-
   local all_names = {}
 
   while true do
     local var_name, var_value = debug.getupvalue(func, i)
-    if not var_name then
-      if name then return else return all_names end
-    end
+    if not var_name then break end
 
-    if name then
-      if name == var_name then
-        if 1 == select('#', ...) then
-          local new_value = select(1, ...)
-          debug.setupvalue(func, i, new_value)
-          return true
-        else
-          return var_value
-        end
-      end
-    else
+    if match and safe_match(var_name, name) then
       table.insert(all_names, var_name)
+    elseif name == var_name then
+      return true, var_name, var_value, i
     end
 
     i = i + 1
+  end
+
+  if match then return all_names end
+end
+
+function InstanceMethods:set_upvalue(name, new_value)
+  local func = self.info.func
+  local ok, _, _, var_index = self:find_upvalue(name)
+
+  if ok then
+    debug.setupvalue(func, var_index, new_value)
+    return true
   end
 end
 
 function InstanceMethods:get_fenv()
   return setmetatable({}, {
     __index = function(_, key)
-      return self:local_var(key) or self:upvalue(key) or self.env[key]
+      local found_local, _, local_value = self:find_local_var(key)
+      if found_local then return local_value end
+
+      local found_upvalue, _, upvalue_value = self:find_upvalue(key)
+      if found_upvalue then return upvalue_value end
+
+      return self.env[key]
     end,
     __newindex = function(_, key, value)
-      local set_local = self:local_var(key, value)
-      local set_upvalue
+      local set_local = self:set_local_var(key, value)
+      if set_local then return value end
 
-      if not set_local   then set_upvalue   = self:upvalue(key, value) end
-      if not set_upvalue then self.env[key] = value                    end
+      local set_upvalue = self:set_upvalue(key, value)
+      if set_upvalue then return value end
+
+      self.env[key] = value
 
       return value
     end
