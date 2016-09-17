@@ -1,11 +1,12 @@
 local new_binding = require('resty.repl.binding').new
 local new_completer = require('resty.repl.completer').new
 local binding, completer, result, word
+local commands = {}
 
 local test_completer = function()
   local info = debug.getinfo(2)
   binding = new_binding(info)
-  completer = new_completer(binding)
+  completer = new_completer(binding, commands)
   result = completer:find_matches(word)
 end
 
@@ -18,6 +19,10 @@ local example_function = function(local_arg)
   assert(new_binding)
   assert(new_completer)
   assert(upvalue_with_mt)
+
+  local local_false = false
+
+  assert(local_false == false)
 
   local myngx = {
     req = { get_body_data = function() end, get_body_file = function() end }
@@ -59,7 +64,7 @@ describe('repl completer', function()
   end)
 
   it('should complete local args', function()
-    assert.are_same({ 'local_arg' }, complete 'loc')
+    assert.are_same({ 'local_arg', 'local_false' }, complete 'loc')
   end)
 
   it('should complete upvalues', function()
