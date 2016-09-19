@@ -22,7 +22,7 @@ test_luajit:
 	@docker-compose run --rm app busted spec
 
 test_lua51:
-	@echo LUA5.1
+	@echo LUA5.1:
 	@docker-compose run --rm lua51 bin/lua51test
 
 shell:
