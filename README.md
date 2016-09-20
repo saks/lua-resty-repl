@@ -63,13 +63,16 @@ $ curl -H X-Header:buz 172.17.0.2:8080?foo=bar
 
 ```
 nginx -c /tmp/ngx.conf
-2016/09/19 16:39:19 [alert] 639#0: lua_code_cache is off; this will hurt performance in /tmp/ngx.conf:12
+2016/09/20 16:26:33 [alert] 2257#0: lua_code_cache is off; this will hurt performance in /tmp/ngx.conf:12
 nginx: [alert] lua_code_cache is off; this will hurt performance in /tmp/ngx.conf:12
-2016/09/19 16:39:19 [notice] 639#0: using the "epoll" event method
-2016/09/19 16:39:19 [notice] 639#0: openresty/1.11.2.1
-2016/09/19 16:39:19 [notice] 639#0: built by gcc 4.9.2 (Debian 4.9.2-10)
-2016/09/19 16:39:19 [notice] 639#0: OS: Linux 4.4.0-38-generic
-2016/09/19 16:39:19 [notice] 639#0: getrlimit(RLIMIT_NOFILE): 65536:65536
+2016/09/20 16:26:33 [notice] 2257#0: using the "epoll" event method
+2016/09/20 16:26:33 [notice] 2257#0: openresty/1.11.2.1
+2016/09/20 16:26:33 [notice] 2257#0: built by gcc 4.9.2 (Debian 4.9.2-10)
+2016/09/20 16:26:33 [notice] 2257#0: OS: Linux 4.4.0-38-generic
+2016/09/20 16:26:33 [notice] 2257#0: getrlimit(RLIMIT_NOFILE): 65536:65536
+
+From: content_by_lua(ngx.conf:17) @ line 2
+
 [1] ngx(content)> ngx.req.get_headers()
 => {
   accept = "*/*",
@@ -87,7 +90,7 @@ nginx: [alert] lua_code_cache is off; this will hurt performance in /tmp/ngx.con
 [3] ngx(content)> ngx.say 'it works!'
 => 1
 [4] ngx(content)> ngx.exit(ngx.OK)
-172.17.0.1 - - [19/Sep/2016:16:39:30 +0000] "GET /?foo=bar HTTP/1.1" 200 20 "-" "curl/7.47.0"
+172.17.0.1 - - [20/Sep/2016:16:26:50 +0000] "GET /?foo=bar HTTP/1.1" 200 20 "-" "curl/7.47.0"
 ```
 
 ## Compatibility
