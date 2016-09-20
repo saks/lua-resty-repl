@@ -33,6 +33,8 @@ local function handle_input(input)
 
   local result = binding:eval(input.code)
   formatter.print(result, #input.code)
+
+  return result
 end
 
 local function start()
@@ -43,7 +45,14 @@ local function start()
   binding = new_binding(caller_info)
   ui      = new_ui(binding)
 
-  while running do handle_input(ui:readline()) end
+  while running do
+    local input = ui:readline()
+    local result = handle_input(input)
+
+    if result and result:is_success() then
+      ui:add_to_history(input.code)
+    end
+  end
 end
 
 return {

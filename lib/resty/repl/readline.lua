@@ -7,10 +7,21 @@ if not success then
   return require 'resty.repl.readline_stub'
 end
 
+-- from unistd.h:
+local R_OK = 4
+local W_OK = 2
+local F_OK = 0
+
 ffi.cdef[[
   /* libc definitions */
   void* malloc(size_t bytes);
   void free(void *);
+
+  /* stdio.h */
+  size_t fwrite(const void *, size_t, size_t, void*);
+
+  /* unistd.h */
+  int access(const char *pathname, int mode);
 
   typedef void rl_vcpfunc_t (char *);
 
@@ -40,7 +51,6 @@ ffi.cdef[[
   void rl_callback_handler_remove (void);
 
   void* rl_outstream;
-  size_t fwrite(const void *, size_t, size_t, void*);
 
   int rl_set_prompt (const char *prompt);
   int rl_clear_message (void);
@@ -53,53 +63,61 @@ ffi.cdef[[
   int rl_point;
 ]]
 
-local libreadline = ffi.load 'libreadline.so.6'
+local clib = ffi.load 'libreadline.so.6'
+
+local function history_file_is_writable()
+  local history_fn = readline_utils.history_fn()
+  local rw_access = bit.bor(R_OK, W_OK)
+  local file_exist = 0 == clib.access(history_fn, F_OK)
+
+  if file_exist then
+    return 0 == clib.access(history_fn, rw_access)
+  else -- check dir
+    return 0 == clib.access(readline_utils.home_dir, rw_access)
+  end
+end
+
+if not history_file_is_writable() then readline_utils.home_dir = '/tmp' end
 
 -- read history from file
-libreadline.read_history_range(readline_utils.history_fn(), 0, -1)
-
-
-local add_to_history = function(text)
-  libreadline.add_history(text)
-  assert(0 == libreadline.write_history(readline_utils.history_fn()),
-    'Cannot write history. Make sure path is writable: '
-    .. readline_utils.history_fn())
-end
-
-local teardown = function()
-  libreadline.rl_callback_handler_remove()
-end
+clib.read_history_range(readline_utils.history_fn(), 0, -1)
 
 local write = function(text)
-  return libreadline.fwrite(text, #text, 1, libreadline.rl_outstream)
+  return clib.fwrite(text, #text, 1, clib.rl_outstream)
 end
 
 local puts = function(text)
-  if nil == text then
-    text = ''
-  else
-    text = tostring(text)
-  end
-
+  if nil == text then text = '' else text = tostring(text) end
   return write(text .. '\n')
 end
 
+local add_to_history = function(text)
+  clib.add_history(text)
+  if history_file_is_writable() then
+    clib.write_history(readline_utils.history_fn())
+  end
+end
+
+local teardown = function()
+  clib.rl_callback_handler_remove()
+end
+
 local function set_attempted_completion_function(callback)
-  function libreadline.rl_attempted_completion_function(word)
+  function clib.rl_attempted_completion_function(word)
     local strword = ffi.string(word)
-    local buffer = ffi.string(libreadline.rl_line_buffer)
+    local buffer = ffi.string(clib.rl_line_buffer)
 
     local matches = callback(strword, buffer)
 
     if not matches then return nil end
 
     -- if matches is an empty array, tell readline to not call default completion (file)
-    libreadline.rl_attempted_completion_over = 1
-    libreadline.rl_completion_suppress_append = 1
+    clib.rl_attempted_completion_over = 1
+    clib.rl_completion_suppress_append = 1
 
     -- translate matches table to C strings
     -- (there is probably more efficient ways to do it)
-    return libreadline.rl_completion_matches(word, function(_, i)
+    return clib.rl_completion_matches(word, function(_, i)
       local match = matches[i + 1]
 
       if match then
@@ -121,12 +139,11 @@ local chars_to_string = function(chars)
 end
 
 local readline = function(...)
-  local chars = libreadline.readline(...)
+  local chars = clib.readline(...)
   local line
 
   if chars ~= nil then
     line = chars_to_string(chars)
-    add_to_history(line)
   end
 
   return line
@@ -136,6 +153,7 @@ local _M = setmetatable({
   teardown = teardown,
   puts = puts,
   set_attempted_completion_function = set_attempted_completion_function,
+  add_to_history = add_to_history,
 }, { __call = function(_, ...) return readline(...) end })
 
 return _M

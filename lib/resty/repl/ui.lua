@@ -34,6 +34,10 @@ function InstanceMethods:prompt_line()
   return res
 end
 
+function InstanceMethods.add_to_history(_, text)
+  readline.add_to_history(text)
+end
+
 local mt = { __index = InstanceMethods }
 
 local function new(binding)
