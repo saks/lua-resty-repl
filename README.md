@@ -93,7 +93,10 @@ nginx: [alert] lua_code_cache is off; this will hurt performance in /tmp/ngx.con
 ## Compatibility
 Right now it's only compatible with:
 - luajit
-- lua5.1
+- lua5.1 (no readline)
+
+## Os Support
+Only GNU/Linux for now.
 
 ## Roadmap
 - colorized output
