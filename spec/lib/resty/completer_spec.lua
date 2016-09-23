@@ -25,7 +25,9 @@ local example_function = function(local_arg)
   assert(local_false == false)
 
   local myngx = {
-    req = { get_body_data = function() end, get_body_file = function() end }
+    req = { get_body_data = function() end, get_body_file = function() end },
+    ERR = 1,
+    ERROR = 2,
   }
 
   function myngx:print() assert(self) end
@@ -51,7 +53,13 @@ describe('repl completer', function()
     local res = complete 'myngx.'
     table.sort(res)
     assert.are_same(
-      { 'myngx.print()', 'myngx.req.', 'myngx.xprint()' },
+      {
+        'myngx.ERR',
+        'myngx.ERROR',
+        'myngx.print()',
+        'myngx.req.',
+        'myngx.xprint()'
+      },
       res
     )
     assert.are_same({ 'myngx.req.' }, complete 'myngx.re')
@@ -83,6 +91,18 @@ describe('repl completer', function()
 
     it('should complete meta keys', function()
       assert.are_same({ 'upvalue_with_mt.bar' }, complete 'upvalue_with_mt.b')
+    end)
+  end)
+
+  context('similar prefix fields', function()
+    it('should complete all of them', function()
+      local expected = { 'myngx.ERROR', 'myngx.ERR' }
+      local actual   = complete 'myngx.ERR'
+
+      table.sort(expected)
+      table.sort(actual)
+
+      assert.are_same(expected, actual)
     end)
   end)
 
