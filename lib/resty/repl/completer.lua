@@ -143,14 +143,9 @@ function _M:find_matches_prop(word, prop_prefix)
 
     return self:smart_completion(result)
   else
-    local already_good_obj = self:eval(word)
-    if already_good_obj then
-      return self:smart_completion({ word })
-    else
-      local object, dot, prop = word:match('(.+)([.:])(.+)$')
-      if (not object) or (not prop) then return end
-      return self:find_matches_prop(object .. dot, prop)
-    end
+    local object, dot, prop = word:match('(.+)([.:])(.+)$')
+    if (not object) or (not prop) then return end
+    return self:find_matches_prop(object .. dot, prop)
   end
 end
 
