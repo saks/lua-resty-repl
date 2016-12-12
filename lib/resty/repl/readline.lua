@@ -63,7 +63,7 @@ ffi.cdef[[
   int rl_point;
 ]]
 
-local clib = ffi.load 'libreadline.so.6'
+local clib = ffi.load 'libreadline'
 
 local function history_file_is_writable()
   local history_fn = readline_utils.history_fn()
