@@ -63,7 +63,34 @@ ffi.cdef[[
   int rl_point;
 ]]
 
-local clib = ffi.load 'libreadline.so.6'
+-- for builds with separate libhistory:
+pcall(ffi.load, 'libhistory.so.6')
+pcall(ffi.load, 'libhistory.so.7')
+pcall(ffi.load, 'libhistory')
+
+local readline_available, clib
+
+-- for linux with libreadline 6.x:
+readline_available, clib = pcall(ffi.load, 'libreadline.so.6')
+
+-- for linux with libreadline 7.x:
+if not readline_available then
+  readline_available, clib = pcall(ffi.load, 'libreadline.so.7')
+end
+
+-- for mac:
+if not readline_available then
+  readline_available, clib = pcall(ffi.load, 'libreadline')
+end
+
+-- check if libhistory was loaded:
+local history_available = pcall(function()
+  return clib.read_history_range
+end)
+
+if not (readline_available and history_available) then
+  return require 'resty.repl.readline_stub'
+end
 
 local function history_file_is_writable()
   local history_fn = readline_utils.history_fn()
