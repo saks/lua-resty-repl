@@ -96,7 +96,8 @@ Right now it's only compatible with:
 - lua5.1 (no readline)
 
 ## Os Support
-Only GNU/Linux for now.
+- GNU/Linux 
+- Mac OS
 
 ## Roadmap
 - colorized output
