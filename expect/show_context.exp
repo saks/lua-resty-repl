@@ -1,0 +1,34 @@
+#!/usr/bin/expect -f
+
+source "expect/lib/helpers.tcl"
+
+spawn luajit ./expect/test_data/example1.lua
+
+# show context and prompt:
+expect_or_fail "\r
+From: ./expect/test_data/example1.lua @ line 7\r
+\r
+     2: local b = 2\r
+     3: \r
+     4: assert(y ~= b)\r
+     5: \r
+     6: local function f(x)\r
+ =>  7: 	require('resty.repl').start()\r
+     8: 	print('x arg: ' .. tostring(x))\r
+     9: end\r
+    10: \r
+    11: f(123)\r
+\r\n"
+expect_prompt_line 1
+
+# show the value of argument "x":
+input "x"
+expect_or_fail "=> 123"
+expect_prompt_line 2
+
+# override the value of argument "x":
+input "x = 11"
+expect_or_fail "=> nil"
+expect_prompt_line 3
+
+exit_repl

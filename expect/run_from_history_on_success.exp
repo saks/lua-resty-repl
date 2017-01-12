@@ -1,51 +1,22 @@
 #!/usr/bin/expect -f
 
-set force_conservative 0  ;# set to 1 to force conservative mode even if
-			  ;# script wasn't run conservatively originally
-if {$force_conservative} {
-	set send_slow {1 .1}
-	proc send {ignore arg} {
-		sleep .1
-		exp_send -s -- $arg
-	}
-}
+source "expect/lib/helpers.tcl"
 
 spawn "resty-repl"
 
-set timeout 1
+expect_prompt_line 1
 
-proc abort {} { exit 1 }
+input "1 + 1"
+expect_or_fail "=> 2"
 
-expect {
-  timeout abort
-  "\\\[1\\\] lua(main)> "
-}
+expect_prompt_line 2
 
-send -- "1+1\r"
-expect {
-  timeout abort
-  "=> 2"
-}
+press_up_arrow_key
+expect_or_fail "1 + 1"
 
-expect {
-  timeout abort
-  "\\\[2\\\] lua(main)> "
-}
+press_enter_key
+expect_or_fail "=> 2"
 
-send -- "OA"
-expect {
-  timeout abort
-  "1+1"
-}
-send -- "\r"
-expect {
-  timeout abort
-  "=> 2"
-}
-expect {
-  timeout abort
-  "\\\[3\\\] lua(main)> "
-}
+expect_prompt_line 3
 
-# exit from repl and see script output:
-send "exit\r"
+exit_repl

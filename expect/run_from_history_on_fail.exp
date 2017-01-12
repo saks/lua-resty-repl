@@ -1,47 +1,21 @@
 #!/usr/bin/expect -f
 
-set force_conservative 0  ;# set to 1 to force conservative mode even if
-			  ;# script wasn't run conservatively originally
-if {$force_conservative} {
-	set send_slow {1 .1}
-	proc send {ignore arg} {
-		sleep .1
-		exp_send -s -- $arg
-	}
-}
+source "expect/lib/helpers.tcl"
 
 spawn "resty-repl"
 
-set timeout 1
+expect_prompt_line 1
 
-proc abort {} { exit 1 }
+input "x + x"
+expect_or_fail {ERROR: \[string "stdin"]:1: attempt to perform arithmetic on global 'x' (a nil value)}
 
-expect {
-  timeout abort
-  "\\\[1\\\] lua(main)> "
-}
+input "x = 1"
+expect_or_fail "=> nil"
 
-send -- "x+x\r"
-expect {
-  timeout abort
-  "ERROR: \\\[string \"stdin\"\\\]:1: attempt to perform arithmetic on global 'x' (a nil value)"
-}
+# press UP Arrow key twice, get "x + x" from history
+press_up_arrow_key 2
+press_enter_key
 
-send -- "x = 1\r"
+expect_or_fail "=> 2"
 
-expect {
-  timeout abort
-  "=> nil"
-}
-
-send -- "\033OA"
-send -- "\033OA"
-send -- "\r"
-
-expect {
-  timeout abort
-  "=> 2"
-}
-
-# exit from repl and see script output:
-send "exit\r"
+exit_repl
