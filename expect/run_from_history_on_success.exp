@@ -1,0 +1,51 @@
+#!/usr/bin/expect -f
+
+set force_conservative 0  ;# set to 1 to force conservative mode even if
+			  ;# script wasn't run conservatively originally
+if {$force_conservative} {
+	set send_slow {1 .1}
+	proc send {ignore arg} {
+		sleep .1
+		exp_send -s -- $arg
+	}
+}
+
+spawn "resty-repl"
+
+set timeout 1
+
+proc abort {} { exit 1 }
+
+expect {
+  timeout abort
+  "\\\[1\\\] lua(main)> "
+}
+
+send -- "1+1\r"
+expect {
+  timeout abort
+  "=> 2"
+}
+
+expect {
+  timeout abort
+  "\\\[2\\\] lua(main)> "
+}
+
+send -- "OA"
+expect {
+  timeout abort
+  "1+1"
+}
+send -- "\r"
+expect {
+  timeout abort
+  "=> 2"
+}
+expect {
+  timeout abort
+  "\\\[3\\\] lua(main)> "
+}
+
+# exit from repl and see script output:
+send "exit\r"

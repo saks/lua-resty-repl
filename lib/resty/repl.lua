@@ -49,7 +49,7 @@ local function start()
     local input = ui:readline()
     local result = handle_input(input)
 
-    if result and result:is_success() then
+    if result then
       ui:add_to_history(input.code)
     end
   end
