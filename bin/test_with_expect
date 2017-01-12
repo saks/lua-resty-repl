@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# install package
+luarocks make lua-resty-repl-scm-0.rockspec > /dev/null
+
+suffix=.exp
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+before_each() rm -f /root/.luahistory # cleanup history file
+fail() printf "${RED}FAIL${NC}\n"
+ok()   printf "${GREEN}OK${NC}\n"
+
+run_test() {
+  test_file=$1
+
+  echo -n `basename -s $suffix $test_file`' .. '
+  expect $test_file > /dev/null
+  [ $? = 0 ] && ok || fail
+}
+
+for fn in `ls ./expect/*$suffix`; do
+  before_each
+  run_test $fn
+done
