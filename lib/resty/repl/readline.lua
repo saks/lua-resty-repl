@@ -2,10 +2,13 @@
 
 local readline_utils = require 'resty.repl.readline_utils'
 
-local success, ffi = pcall(function() return require('ffi') end)
-if not success then
+local no_readline_fallback = function()
+  io.write 'No readline found. Fallback mode.\n'
   return require 'resty.repl.readline_stub'
 end
+
+local success, ffi = pcall(function() return require('ffi') end)
+if not success then return no_readline_fallback() end
 
 -- from unistd.h:
 local R_OK = 4
@@ -31,7 +34,7 @@ ffi.cdef[[
   void add_history(const char *line);
   int write_history (const char *filename);
   int append_history (int nelements, const char *filename);
-  int read_history_range (const char *filename, int from, int to);
+  int read_history (const char *filename);
 
   /* completion */
   typedef char **rl_completion_func_t (const char *, int, int);
@@ -68,7 +71,27 @@ ffi.cdef[[
   int rl_readline_state;
 ]]
 
-local clib = ffi.load 'libreadline.so.6'
+-- for builds with separate libhistory:
+pcall(ffi.load, 'libhistory.so.6')
+pcall(ffi.load, 'libhistory.so.7')
+pcall(ffi.load, 'libhistory')
+
+local readline_available, clib
+
+-- for linux with libreadline 6.x:
+readline_available, clib = pcall(ffi.load, 'libreadline.so.6')
+
+-- for linux with libreadline 7.x:
+if not readline_available then
+  readline_available, clib = pcall(ffi.load, 'libreadline.so.7')
+end
+
+-- for mac:
+if not readline_available then
+  readline_available, clib = pcall(ffi.load, 'libreadline')
+end
+
+if not readline_available then return no_readline_fallback() end
 
 local function history_file_is_writable()
   local history_fn = readline_utils.history_fn()
@@ -85,7 +108,7 @@ end
 if not history_file_is_writable() then readline_utils.home_dir = '/tmp' end
 
 -- read history from file
-clib.read_history_range(readline_utils.history_fn(), 0, -1)
+clib.read_history(readline_utils.history_fn())
 
 local write = function(text)
   return clib.fwrite(text, #text, 1, clib.rl_outstream)
@@ -118,7 +141,7 @@ local function set_attempted_completion_function(callback)
 
     -- if matches is an empty array, tell readline to not call default completion (file)
     clib.rl_attempted_completion_over = 1
-    clib.rl_completion_suppress_append = 1
+    pcall(function() clib.rl_completion_suppress_append = 1 end)
 
     -- translate matches table to C strings
     -- (there is probably more efficient ways to do it)
