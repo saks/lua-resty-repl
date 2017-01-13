@@ -7,6 +7,7 @@ Resty Repl is a powerful alternative to the standard [luajit](http://luajit.org/
 * Pretty print for objects
 * A Powerful and flexible command system
 * Ability to view and replay history
+* Ability to see a context and source of the place in code from where repl was started
 * Runtime invocation (use Resty Repl as a developer console or debugger)
 * Tab completion
 * Simple and easy way to debug lua running in the nginx ([openresty](http://openresty.org/en/))
@@ -99,7 +100,7 @@ Right now it's only compatible with:
 - lua5.1 (no readline)
 
 ## Os Support
-- GNU/Linux 
+- GNU/Linux
 - Mac OS
 
 ## Roadmap
@@ -108,7 +109,6 @@ Right now it's only compatible with:
 - full readline support for lua (no ffi environments)
 - remote debugger
 - command for showing function source
-- show context and source of the place in code from where repl was started
 - test suite with [resty-cli](https://github.com/openresty/resty-cli), [luajit](http://luajit.org/) and different versions of lua
 - better inspect library
 
