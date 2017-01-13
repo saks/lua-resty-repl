@@ -67,6 +67,11 @@ function _M:find_matches_var(word)
     end
   end
 
+  -- search in commands
+  for _, command in pairs(self.commands) do
+    if safe_match(command, re) then table.insert(result, command) end
+  end
+
   return self:smart_completion(result)
 end
 
@@ -160,8 +165,11 @@ function _M:find_matches(word)
   end
 end
 
-function _M.new(binding)
-  return setmetatable({ binding = binding }, { __index = _M })
+function _M.new(binding, commands)
+  return setmetatable({
+    binding  = binding,
+    commands = commands,
+  }, { __index = _M })
 end
 
 return _M

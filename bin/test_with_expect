@@ -10,15 +10,20 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 before_each() rm -f /root/.luahistory # cleanup history file
-fail() printf "${RED}FAIL${NC}\n"
-ok()   printf "${GREEN}OK${NC}\n"
+fail() {
+  printf "${RED}FAIL${NC}\n${RED}"
+  expect -d $test_file
+  printf "${NC}"
+  printf '%80s\n' | tr ' ' -
+}
+ok() printf "${GREEN}OK${NC}\n"
 
 run_test() {
   test_file=$1
 
   echo -n `basename -s $suffix $test_file`' .. '
-  expect $test_file > /dev/null
-  [ $? = 0 ] && ok || fail
+  expect $test_file >> /dev/null
+  [ $? = 0 ] && ok || fail $test_file
 }
 
 for fn in `ls ./expect/*$suffix`; do

@@ -2,8 +2,8 @@ FROM saksmlz/openresty-docker:1.11.2.1-slim
 
 RUN set -ex \
       && apt-get update \
-      && apt-get install --yes perl \
-      && apt-get install --yes build-essential git curl unzip libssl-dev \
+      && apt-get install --yes --no-install-recommends perl expect tclsh \
+      && apt-get install --yes --no-install-recommends build-essential git curl unzip libssl-dev \
       && luarocks install busted \
       && luarocks install luacheck \
       && echo "#!/usr/bin/env resty" > /usr/local/bin/resty-busted \

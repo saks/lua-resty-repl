@@ -39,6 +39,8 @@ ffi.cdef[[
   /* completion */
   typedef char **rl_completion_func_t (const char *, int, int);
   typedef char *rl_compentry_func_t (const char *, int);
+  typedef char **rl_hook_func_t (const char *, int);
+  typedef char *rl_hook_func_t (const char *, int);
 
   char **rl_completion_matches (const char *, rl_compentry_func_t *);
 
@@ -64,6 +66,9 @@ ffi.cdef[[
   int rl_forced_update_display (void);
   void rl_redisplay (void);
   int rl_point;
+
+  rl_hook_func_t *rl_startup_hook;
+  int rl_readline_state;
 ]]
 
 -- for builds with separate libhistory:
@@ -172,7 +177,10 @@ local readline = function(...)
   return line
 end
 
+local set_startup_hook = function(f) clib.rl_startup_hook = f end
+
 local _M = setmetatable({
+  set_startup_hook = set_startup_hook,
   teardown = teardown,
   puts = puts,
   set_attempted_completion_function = set_attempted_completion_function,
