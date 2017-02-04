@@ -84,7 +84,12 @@ function InstanceMethods:find_local_var(name, match)
   local func = self.info.func
   if 'function' ~= type(func) then return end
 
-  local index = get_function_index(func) - 1
+  local function_index = get_function_index(func)
+
+  -- Example: repl running from within coroutine (#26).
+  if not function_index then return end
+
+  local index = function_index - 1
   local i = 1
   local all_names = {}
 

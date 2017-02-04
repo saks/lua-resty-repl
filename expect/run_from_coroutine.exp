@@ -1,0 +1,21 @@
+#!/usr/bin/expect -f
+
+source "expect/lib/helpers.tcl"
+
+spawn "resty-repl"
+
+expect_prompt_line 1
+
+input "c = coroutine.create(function(c_arg) require('resty.repl').start() end)"
+
+expect_prompt_line 2
+
+input "coroutine.resume(c, 'foo')"
+
+expect_prompt_line 1
+
+input "c_arg"
+
+expect_or_fail "=> foo"
+
+exit_repl
