@@ -6,7 +6,9 @@ local function output(result, code_len)
 
   -- print an error if not success
   if not result:is_success() then
-    readline.puts('ERROR: ' .. result:err())
+    local err = result:err()
+    if 'table' == type(err) then err = inspect(err) end
+    readline.puts('ERROR: ' .. err)
     return
   end
 

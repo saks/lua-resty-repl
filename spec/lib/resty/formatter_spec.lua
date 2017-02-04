@@ -76,10 +76,17 @@ describe('formatter', function()
     assert.stub(readline.puts).was_not_called()
   end)
 
-  it('should print error', function()
+  it('should print string error', function()
     formatter.print(eval_result.new { false, 'foo', n = 1 }, 10)
 
     assert.stub(readline.puts).was_called(1)
     assert.stub(readline.puts).was_called_with 'ERROR: foo'
+  end)
+
+  it('should print table error', function()
+    formatter.print(eval_result.new { false, { foo = 'bar' }, n = 1 }, 10)
+
+    assert.stub(readline.puts).was_called(1)
+    assert.stub(readline.puts).was_called_with 'ERROR: {\n  foo = "bar"\n}'
   end)
 end)
